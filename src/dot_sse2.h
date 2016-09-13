@@ -12,6 +12,11 @@
 
 #include <emmintrin.h>
 
+// alignment check
+#include <stdint.h>
+#define is_aligned(POINTER, BYTE_COUNT) \
+  (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
+
 // horizontal sum variant
 #ifdef HORZSUM_SSE3
 #  ifdef __SSE3__
@@ -39,8 +44,13 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
   __m128 s4 = _mm_setzero_ps();
 
   // in each iteration, add 1 product to each of the 4 sums in parallel
-  for (int k = 0; k < 4*(n/4); k += 4)
-    s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k)));
+  if (is_aligned(a, 16) && is_aligned(b, 16))
+    for (int k = 0; k < 4*(n/4); k += 4)
+      s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k)));
+  else
+    for (int k = 0; k < 4*(n/4); k += 4)
+      s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k)));
+  // see comment below at the equivalent spot in sddot_sse2
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
@@ -68,8 +78,13 @@ inline double ddot_sse2 (const double *a, const double *b, int n)
   __m128d s2 = _mm_setzero_pd();
 
   // in each iteration, add 1 product to each of the 2 sums in parrallel
-  for (int k = 0; k < 2*(n/2); k += 2)
-    s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_loadu_pd(a+k), _mm_loadu_pd(b+k)));
+  if (is_aligned(a, 16) && is_aligned(b, 16))
+    for (int k = 0; k < 2*(n/2); k += 2)
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_load_pd(a+k), _mm_load_pd(b+k)));
+  else
+    for (int k = 0; k < 2*(n/2); k += 2)
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_loadu_pd(a+k), _mm_loadu_pd(b+k)));
+  // see comment below at the equivalent spot in sddot_sse2
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
@@ -95,9 +110,21 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   __m128d s2 = _mm_setzero_pd();
 
   // in each iteration, add 1 product to each of the 2 sums in parrallel
-  for (int k = 0; k < 2*(n/2); k += 2)
-    s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k)),
-                                   _mm_cvtps_pd(_mm_loadu_ps(b+k))));
+  if (is_aligned(a, 16) && is_aligned(b, 16))
+    for (int k = 0; k < 2*(n/2); k += 2)
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_load_ps(a+k)),
+                                     _mm_cvtps_pd(_mm_load_ps(b+k))));
+  else
+    for (int k = 0; k < 2*(n/2); k += 2)
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k)),
+                                     _mm_cvtps_pd(_mm_loadu_ps(b+k))));
+  // Using unaligned load (_mm_loadu_ps) instead of aligned load
+  // (_mm_load_ps) seemed to slow this function down by more than 30%
+  // on a Xeon E5440 CPU. On newer CPUs, the slowdown was so tiny that
+  // we could have ignored it and just used _mm_loadu_ps. But then again,
+  // on newer CPUs we would be using the AVX version anyway. Hence, we try
+  // to optimize for older CPUs here by checking the alignment and then
+  // using the appropriate load function (at the cost of an if statement).
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
