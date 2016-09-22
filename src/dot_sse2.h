@@ -26,6 +26,8 @@
 #  endif
 #endif
 
+#include <stdio.h>
+
 /*----------------------------------------------------------------------------
   Function Prototypes
 ----------------------------------------------------------------------------*/
@@ -109,15 +111,22 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   // initialize 2 sums
   __m128d s2 = _mm_setzero_pd();
 
-  // in each iteration, add 1 product to each of the 2 sums in parrallel
-  if (is_aligned(a, 16) && is_aligned(b, 16))
-    for (int k = 0; k < 2*(n/2); k += 2)
+  // add products
+  if (is_aligned(a, 16) && is_aligned(b, 16)) {
+    for (int k = 0; k < 4*(n/4); k += 4) {
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_load_ps(a+k)),
                                      _mm_cvtps_pd(_mm_load_ps(b+k))));
-  else
-    for (int k = 0; k < 2*(n/2); k += 2)
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k+2)),
+                                     _mm_cvtps_pd(_mm_loadu_ps(b+k+2))));
+    } }
+  else {
+    for (int k = 0; k < 4*(n/4); k += 4) {
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k)),
                                      _mm_cvtps_pd(_mm_loadu_ps(b+k))));
+      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k+2)),
+                                     _mm_cvtps_pd(_mm_loadu_ps(b+k+2))));
+    }
+  }
   // Using unaligned load (_mm_loadu_ps) instead of aligned load
   // (_mm_load_ps) seemed to slow this function down by more than 30%
   // on a Xeon E5440 CPU. On newer CPUs, the slowdown was so tiny that
@@ -128,14 +137,14 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
-  s2 = _mm_hadd_pd(s2,s2);
+  s2 = _mm_hadd_pd(s2, s2);
   #else
   s2 = _mm_add_pd(s2, _mm_shuffle_pd(s2, s2, 1));
   #endif
   double s = _mm_cvtsd_f64(s2); // extract horizontal sum from 1st elem.
 
   // add the remaining products
-  for (int k = 2*(n/2); k < n; k++)
+  for (int k = 4*(n/4); k < n; k++)
     s += a[k] * b[k];
 
   return s;
