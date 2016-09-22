@@ -82,7 +82,7 @@ inline double ddot_avx    (const double *a, const double *b, int n)
   __m256d s4 = _mm256_setzero_pd();
 
   // in each iteration, add 1 product to each of the 4 sums in parallel
-  for (int k = 0; k < n; k += 4)
+  for (int k = 0; k < 4*(n/4); k += 4)
     #ifdef __FMA__
     s4 = _mm256_fmadd_pd(_mm256_loadu_pd(a+k), _mm256_loadu_pd(b+k), s4);
     #else
@@ -115,7 +115,7 @@ inline double sddot_avx    (const float *a, const float *b, int n)
   __m256d s4 = _mm256_setzero_pd();
 
   // in each iteration, add 1 product to each of the 4 sums in parallel
-  for (int k = 0; k < n; k += 4)
+  for (int k = 0; k < 4*(n/4); k += 4)
     #ifdef __FMA__
     s4 = _mm256_fmadd_pd(_mm256_cvtps_pd(_mm_loadu_ps(a+k)),
                          _mm256_cvtps_pd(_mm_loadu_ps(b+k)), s4);
