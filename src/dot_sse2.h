@@ -1,7 +1,14 @@
 /*----------------------------------------------------------------------------
-  File    : dot_sse2.h
+  File:     dot_sse2.h
   Contents: dot product (SSE2-based implementations)
-  Author  : Kristian Loewe, Christian Borgelt
+
+  Notes:
+  On older CPU models such as the Xeon E5440, unaligned load (_mm_loadu_ps)
+  is significantly slower than aligned load (_mm_load_ps) which is why we
+  try to avoid it here if possible. On newer CPU models, the AVX version
+  should be used.
+
+  Authors:  Kristian Loewe, Christian Borgelt
 ----------------------------------------------------------------------------*/
 #ifndef DOT_SSE2_H
 #define DOT_SSE2_H
@@ -26,8 +33,6 @@
 #  endif
 #endif
 
-#include <stdio.h>
-
 /*----------------------------------------------------------------------------
   Function Prototypes
 ----------------------------------------------------------------------------*/
@@ -42,6 +47,22 @@ inline double sddot_sse2 (const float  *a, const float  *b, int n);
 // --- dot product (single precision)
 inline float sdot_sse2 (const float *a, const float *b, int n)
 {
+  // initialize total sum
+  float s = 0.0;
+
+  // compute and add up to 3 products without SIMD, hoping for alignment
+  int aligned = is_aligned(a, 16) && is_aligned(b, 16);
+  if (!aligned) {
+    int k = 0;
+    while (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 16) && is_aligned(b, 16);
+      if (aligned || (++k > 2) || (++k > n))
+        break;
+    }
+  }
+
   // initialize 4 sums
   __m128 s4 = _mm_setzero_ps();
 
@@ -52,7 +73,6 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
   else
     for (int k = 0; k < 4*(n/4); k += 4)
       s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k)));
-  // see comment below at the equivalent spot in sddot_sse2
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
@@ -62,7 +82,7 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
   s4 = _mm_add_ps(s4, _mm_movehl_ps(s4, s4));
   s4 = _mm_add_ss(s4, _mm_shuffle_ps(s4, s4, 1));
   #endif
-  float s = _mm_cvtss_f32(s4);  // extract horizontal sum from 1st elem.
+  s += _mm_cvtss_f32(s4);  // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 4*(n/4); k < n; k++)
@@ -76,17 +96,25 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
 // --- dot product (double precision)
 inline double ddot_sse2 (const double *a, const double *b, int n)
 {
-  // initialize 2 sums
-  __m128d s2 = _mm_setzero_pd();
+  // initialize total sum
+  double s = 0.0;
 
-  // in each iteration, add 1 product to each of the 2 sums in parrallel
-  if (is_aligned(a, 16) && is_aligned(b, 16))
+  // compute and add up to 1 product without SIMD, hoping for alignment
+  int aligned = is_aligned(a, 16) && is_aligned(b, 16);
+  if (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 16) && is_aligned(b, 16);
+  }
+  
+  // compute and add (the bulk of the) products using SSE2 intrinsics
+  __m128d s2 = _mm_setzero_pd(); // initalize 2 sums
+  if (aligned)
     for (int k = 0; k < 2*(n/2); k += 2)
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_load_pd(a+k), _mm_load_pd(b+k)));
   else
     for (int k = 0; k < 2*(n/2); k += 2)
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_loadu_pd(a+k), _mm_loadu_pd(b+k)));
-  // see comment below at the equivalent spot in sddot_sse2
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
@@ -94,7 +122,7 @@ inline double ddot_sse2 (const double *a, const double *b, int n)
   #else
   s2 = _mm_add_pd(s2, _mm_shuffle_pd(s2, s2, 1));
   #endif
-  double s = _mm_cvtsd_f64(s2); // extract horizontal sum from 1st elem.
+  s += _mm_cvtsd_f64(s2); // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 2*(n/2); k < n; k++)
@@ -108,11 +136,25 @@ inline double ddot_sse2 (const double *a, const double *b, int n)
 // --- dot product (input: single; intermediate and output: double)
 inline double sddot_sse2 (const float *a, const float *b, int n)
 {
-  // initialize 2 sums
-  __m128d s2 = _mm_setzero_pd();
+  // initialize total sum
+  double s = 0.0;
 
-  // add products
-  if (is_aligned(a, 16) && is_aligned(b, 16)) {
+  // compute and add up to 3 products without SIMD, hoping for alignment
+  int aligned = is_aligned(a, 16) && is_aligned(b, 16);
+  if (!aligned) {
+    int k = 0;
+    while (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 16) && is_aligned(b, 16);
+      if (aligned || (++k > 2) || (++k > n))
+        break;
+    }
+  }
+
+  // compute and add (the bulk of the) products using SSE2 intrinsics
+  __m128d s2 = _mm_setzero_pd(); // initalize 2 sums
+  if (aligned) {
     for (int k = 0; k < 4*(n/4); k += 4) {
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k))));
@@ -127,13 +169,6 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     }
   }
-  // Using unaligned load (_mm_loadu_ps) instead of aligned load
-  // (_mm_load_ps) seemed to slow this function down by more than 30%
-  // on a Xeon E5440 CPU. On newer CPUs, the slowdown was so tiny that
-  // we could have ignored it and just used _mm_loadu_ps. But then again,
-  // on newer CPUs we would be using the AVX version anyway. Hence, we try
-  // to optimize for older CPUs here by checking the alignment and then
-  // using the appropriate load function (at the cost of an if statement).
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
@@ -141,7 +176,7 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   #else
   s2 = _mm_add_pd(s2, _mm_shuffle_pd(s2, s2, 1));
   #endif
-  double s = _mm_cvtsd_f64(s2); // extract horizontal sum from 1st elem.
+  s += _mm_cvtsd_f64(s2); // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 4*(n/4); k < n; k++)
