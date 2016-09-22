@@ -121,8 +121,7 @@ inline double sddot_avx    (const float *a, const float *b, int n)
                          _mm256_cvtps_pd(_mm_loadu_ps(b+k)), s4);
     #else
     s4 = _mm256_add_pd(
-           _mm256_mul_pd(_mm256_cvtps_pd(_mm_loadu_ps(a+k)),
-                         _mm256_cvtps_pd(_mm_loadu_ps(b+k))), s4);
+      _mm256_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k))), s4);
     #endif
   // compute horizontal sum
   __m128d sh = _mm_add_pd(_mm256_extractf128_pd(s4, 0),

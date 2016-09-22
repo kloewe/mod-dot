@@ -114,17 +114,17 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   // add products
   if (is_aligned(a, 16) && is_aligned(b, 16)) {
     for (int k = 0; k < 4*(n/4); k += 4) {
-      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_load_ps(a+k)),
-                                     _mm_cvtps_pd(_mm_load_ps(b+k))));
-      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k+2)),
-                                     _mm_cvtps_pd(_mm_loadu_ps(b+k+2))));
+      s2 = _mm_add_pd(s2,
+        _mm_cvtps_pd(_mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k))));
+      s2 = _mm_add_pd(s2,
+        _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     } }
   else {
     for (int k = 0; k < 4*(n/4); k += 4) {
-      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k)),
-                                     _mm_cvtps_pd(_mm_loadu_ps(b+k))));
-      s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_cvtps_pd(_mm_loadu_ps(a+k+2)),
-                                     _mm_cvtps_pd(_mm_loadu_ps(b+k+2))));
+      s2 = _mm_add_pd(s2,
+        _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k))));
+      s2 = _mm_add_pd(s2,
+        _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     }
   }
   // Using unaligned load (_mm_loadu_ps) instead of aligned load
