@@ -68,10 +68,10 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
 
   // in each iteration, add 1 product to each of the 4 sums in parallel
   if (is_aligned(a, 16) && is_aligned(b, 16))
-    for (int k = 0; k < 4*(n/4); k += 4)
+    for (int k = 0, nq = 4*(n/4); k < nq; k += 4)
       s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k)));
   else
-    for (int k = 0; k < 4*(n/4); k += 4)
+    for (int k = 0, nq = 4*(n/4); k < nq; k += 4)
       s4 = _mm_add_ps(s4, _mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k)));
 
   // compute horizontal sum
@@ -106,14 +106,14 @@ inline double ddot_sse2 (const double *a, const double *b, int n)
       n--; a++; b++;
       aligned = is_aligned(a, 16) && is_aligned(b, 16);
   }
-  
+
   // compute and add (the bulk of the) products using SSE2 intrinsics
   __m128d s2 = _mm_setzero_pd(); // initalize 2 sums
   if (aligned)
-    for (int k = 0; k < 2*(n/2); k += 2)
+    for (int k = 0, nq = 2*(n/2); k < nq; k += 2)
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_load_pd(a+k), _mm_load_pd(b+k)));
   else
-    for (int k = 0; k < 2*(n/2); k += 2)
+    for (int k = 0, nq = 2*(n/2); k < nq; k += 2)
       s2 = _mm_add_pd(s2, _mm_mul_pd(_mm_loadu_pd(a+k), _mm_loadu_pd(b+k)));
 
   // compute horizontal sum
@@ -155,14 +155,14 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   // compute and add (the bulk of the) products using SSE2 intrinsics
   __m128d s2 = _mm_setzero_pd(); // initalize 2 sums
   if (aligned) {
-    for (int k = 0; k < 4*(n/4); k += 4) {
+    for (int k = 0, nq = 4*(n/4); k < nq; k += 4) {
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k))));
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     } }
   else {
-    for (int k = 0; k < 4*(n/4); k += 4) {
+    for (int k = 0, nq = 4*(n/4); k < nq; k += 4) {
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k))));
       s2 = _mm_add_pd(s2,
