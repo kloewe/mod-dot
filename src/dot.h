@@ -36,6 +36,10 @@ extern float  sdot_select  (const float  *a, const float  *b, int n);
 extern double ddot_select  (const double *a, const double *b, int n);
 extern double sddot_select (const float  *a, const float  *b, int n);
 
+extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
+extern double ddot_avxfma  (const double *a, const double *b, int n);
+extern double sddot_avxfma (const float  *a, const float  *b, int n);
+
 extern float  sdot_avx     (const float  *a, const float  *b, int n);
 extern double ddot_avx     (const double *a, const double *b, int n);
 extern double sddot_avx    (const float  *a, const float  *b, int n);
