@@ -153,22 +153,25 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
   }
 
   // compute and add (the bulk of the) products using SSE2 intrinsics
-  __m128d s2 = _mm_setzero_pd(); // initalize 2 sums
+  __m128d s2  = _mm_setzero_pd(); // initalize 2 sums (aligned or unaligned)
+  __m128d s2u = _mm_setzero_pd(); // initalize 2 sums (unaligned)
+  // note that _mm_cvtps_pd() converts *the lower two* SPFP values
   if (aligned) {
     for (int k = 0, nq = 4*(n/4); k < nq; k += 4) {
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_load_ps(a+k), _mm_load_ps(b+k))));
-      s2 = _mm_add_pd(s2,
+      s2u = _mm_add_pd(s2u,
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     } }
   else {
     for (int k = 0, nq = 4*(n/4); k < nq; k += 4) {
       s2 = _mm_add_pd(s2,
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k))));
-      s2 = _mm_add_pd(s2,
+      s2u = _mm_add_pd(s2u,
         _mm_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k+2), _mm_loadu_ps(b+k+2))));
     }
   }
+  s2 = _mm_add_pd(s2,s2u);
 
   // compute horizontal sum
   #ifdef HORZSUM_SSE3
