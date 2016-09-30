@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 2.7.8)
+
 project(dot)
 
 if(CMAKE_VERSION VERSION_LESS "2.8.12")
