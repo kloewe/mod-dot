@@ -12,6 +12,17 @@ extern "C"
 #endif
 
 /*----------------------------------------------------------------------------
+  Enum to encode the sets of dot implementations
+----------------------------------------------------------------------------*/
+enum flags {
+    DOT_NAIVE  = 1,
+    DOT_SSE2   = 2,
+    DOT_AVX    = 3,
+    DOT_AVXFMA = 4,
+    DOT_AUTO   = 3
+};
+
+/*----------------------------------------------------------------------------
   Type Definitions
 ----------------------------------------------------------------------------*/
 typedef float  (sdot_func)  (const float  *a, const float  *b, int n);
@@ -31,6 +42,8 @@ extern sddot_func *sddot_ptr;
 inline float  sdot         (const float  *a, const float  *b, int n);
 inline double ddot         (const double *a, const double *b, int n);
 inline double sddot        (const float  *a, const float  *b, int n);
+
+extern int    dot_set_impl (int   impl);
 
 extern float  sdot_select  (const float  *a, const float  *b, int n);
 extern double ddot_select  (const double *a, const double *b, int n);

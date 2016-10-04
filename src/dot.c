@@ -25,31 +25,40 @@ sddot_func *sddot_ptr = &sddot_select;
 ----------------------------------------------------------------------------*/
 
 float sdot_select (const float *a, const float *b, int n) {
-  if      (hasAVX())
-    sdot_ptr = &sdot_avx;
-  else if (hasSSE2())
-    sdot_ptr = &sdot_sse2;
-  else
-    sdot_ptr = &sdot_naive;
+  dot_set_impl(DOT_AUTO);
   return (*sdot_ptr)(a,b,n);
 }
 
 double ddot_select (const double *a, const double *b, int n) {
-  if      (hasAVX())
-    ddot_ptr = &ddot_avx;
-  else if (hasSSE2())
-    ddot_ptr = &ddot_sse2;
-  else
-    ddot_ptr = &ddot_naive;
+  dot_set_impl(DOT_AUTO);
   return (*ddot_ptr)(a,b,n);
 }
 
 double sddot_select (const float *a, const float *b, int n) {
-  if      (hasAVX())
-    sddot_ptr = &sddot_avx;
-  else if (hasSSE2())
-    sddot_ptr = &sddot_sse2;
-  else
-    sddot_ptr = &sddot_naive;
+  dot_set_impl(DOT_AUTO);
   return (*sddot_ptr)(a,b,n);
+}
+
+int    dot_set_impl (int impl) {
+  if      (hasFMA3() && hasAVX() && (impl >= DOT_AVXFMA)) { // AVX-FMA
+    sdot_ptr  = &sdot_avxfma;
+    ddot_ptr  = &ddot_avxfma;
+    sddot_ptr = &sddot_avxfma;
+    return DOT_AVXFMA; }
+  else if (hasAVX()              && (impl >= DOT_AVX)) {    // AVX
+    sdot_ptr  = &sdot_avx;
+    ddot_ptr  = &ddot_avx;
+    sddot_ptr = &sddot_avx;
+    return DOT_AVX; }
+  else if (hasSSE2()             && (impl >= DOT_SSE2)) {   // SSE2
+    sdot_ptr  = &sdot_sse2;
+    ddot_ptr  = &ddot_sse2;
+    sddot_ptr = &sddot_sse2;
+    return DOT_SSE2; }
+  else {                                                    // naive
+    sdot_ptr  = &sdot_naive;
+    ddot_ptr  = &ddot_naive;
+    sddot_ptr = &sddot_naive;
+    return DOT_NAIVE;
+  }
 }
