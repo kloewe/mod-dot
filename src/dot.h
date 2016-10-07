@@ -15,12 +15,17 @@ extern "C"
   Enum to encode the sets of dot implementations
 ----------------------------------------------------------------------------*/
 enum flags {
-    DOT_NAIVE  = 1,
-    DOT_SSE2   = 2,
-    DOT_AVX    = 3,
-    DOT_AVXFMA = 4,
-    DOT_AUTO   = 100
+    DOT_NAIVE  = 1,   // plain C
+    DOT_SSE2   = 2,   // SSE2
+    DOT_AVX    = 3,   // AVX
+    DOT_AVXFMA = 4,   // AVX+FMA3
+    DOT_AUTO   = 100  // automatic choice
 };
+// Using dot_set_impl(), these values are used to specify the set of
+// implementations to be used. The values/sets are ordered chronologically wrt
+// the advent of the prerequisite instruction set extensions, with DOT_NAIVE
+// representing the plain C fallback implementations, and DOT_AUTO indicating
+// that the best set of implementations should be chosen automatically.
 
 /*----------------------------------------------------------------------------
   Type Definitions
@@ -43,7 +48,27 @@ inline float  sdot         (const float  *a, const float  *b, int n);
 inline double ddot         (const double *a, const double *b, int n);
 inline double sddot        (const float  *a, const float  *b, int n);
 
+/* dot_set_impl
+ * ------------
+ * specify the set of implementations that is used
+ *
+ * If the requested set of implementations is not supported, the function
+ * will select the next best set of implementations that is supported.
+ *
+ * parameters
+ * impl  indicates which set of implementations should be used
+ *       DOT_NAIVE  -> plain C implementations
+ *       DOT_SSE2   -> SSE2 implementations
+ *       DOT_AVX    -> AVX implementations
+ *       DOT_AVXFMA -> AVX+FMA3 implementations
+ *       DOT_AUTO   -> automatically choose the best available set
+ *       (see also the above enum)
+ *
+ * returns
+ * the enum value corresponding to the selected set of implementations
+ */
 extern int    dot_set_impl (int   impl);
+
 
 extern float  sdot_select  (const float  *a, const float  *b, int n);
 extern double ddot_select  (const double *a, const double *b, int n);

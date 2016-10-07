@@ -41,6 +41,8 @@ double sddot_select (const float *a, const float *b, int n) {
 
 int    dot_set_impl (int impl) {
   #ifndef DOT_NOFMA
+  // the AVX-FMA implementations are currently slower than the AVX
+  // implementations and are thus only used if explicitly requested
   if      (hasFMA3() && hasAVX() && (impl == DOT_AVXFMA)) { // AVX-FMA
     sdot_ptr  = &sdot_avxfma;
     ddot_ptr  = &ddot_avxfma;
