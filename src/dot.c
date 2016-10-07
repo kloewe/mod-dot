@@ -40,12 +40,16 @@ double sddot_select (const float *a, const float *b, int n) {
 }
 
 int    dot_set_impl (int impl) {
-  if      (hasFMA3() && hasAVX() && (impl >= DOT_AVXFMA)) { // AVX-FMA
+  #ifndef DOT_NOFMA
+  if      (hasFMA3() && hasAVX() && (impl == DOT_AVXFMA)) { // AVX-FMA
     sdot_ptr  = &sdot_avxfma;
     ddot_ptr  = &ddot_avxfma;
     sddot_ptr = &sddot_avxfma;
     return DOT_AVXFMA; }
   else if (hasAVX()              && (impl >= DOT_AVX)) {    // AVX
+  #else
+  if      (hasAVX()              && (impl >= DOT_AVX)) {    // AVX
+  #endif
     sdot_ptr  = &sdot_avx;
     ddot_ptr  = &ddot_avx;
     sddot_ptr = &sddot_avx;

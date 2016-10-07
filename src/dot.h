@@ -19,7 +19,7 @@ enum flags {
     DOT_SSE2   = 2,
     DOT_AVX    = 3,
     DOT_AVXFMA = 4,
-    DOT_AUTO   = 3
+    DOT_AUTO   = 100
 };
 
 /*----------------------------------------------------------------------------
@@ -49,9 +49,11 @@ extern float  sdot_select  (const float  *a, const float  *b, int n);
 extern double ddot_select  (const double *a, const double *b, int n);
 extern double sddot_select (const float  *a, const float  *b, int n);
 
+#ifndef DOT_NOFMA
 extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
 extern double ddot_avxfma  (const double *a, const double *b, int n);
 extern double sddot_avxfma (const float  *a, const float  *b, int n);
+#endif
 
 extern float  sdot_avx     (const float  *a, const float  *b, int n);
 extern double ddot_avx     (const double *a, const double *b, int n);
