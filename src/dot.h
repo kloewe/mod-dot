@@ -12,6 +12,14 @@ extern "C"
 #endif
 
 /*----------------------------------------------------------------------------
+  Preprocessor Definitions
+----------------------------------------------------------------------------*/
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) \
+    || defined(__amd64__) || defined(_M_AMD64)  || defined(_M_X64)
+#define ARCH_IS_X86_64
+#endif
+
+/*----------------------------------------------------------------------------
   Enum to encode the sets of dot implementations
 ----------------------------------------------------------------------------*/
 enum flags {
@@ -74,23 +82,25 @@ extern float  sdot_select  (const float  *a, const float  *b, int n);
 extern double ddot_select  (const double *a, const double *b, int n);
 extern double sddot_select (const float  *a, const float  *b, int n);
 
-#ifndef DOT_NOFMA
-extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
-extern double ddot_avxfma  (const double *a, const double *b, int n);
-extern double sddot_avxfma (const float  *a, const float  *b, int n);
-#endif
+extern float  sdot_naive   (const float  *a, const float  *b, int n);
+extern double ddot_naive   (const double *a, const double *b, int n);
+extern double sddot_naive  (const float  *a, const float  *b, int n);
+
+#ifdef ARCH_IS_X86_64
+extern float  sdot_sse2    (const float  *a, const float  *b, int n);
+extern double ddot_sse2    (const double *a, const double *b, int n);
+extern double sddot_sse2   (const float  *a, const float  *b, int n);
 
 extern float  sdot_avx     (const float  *a, const float  *b, int n);
 extern double ddot_avx     (const double *a, const double *b, int n);
 extern double sddot_avx    (const float  *a, const float  *b, int n);
 
-extern float  sdot_sse2    (const float  *a, const float  *b, int n);
-extern double ddot_sse2    (const double *a, const double *b, int n);
-extern double sddot_sse2   (const float  *a, const float  *b, int n);
-
-extern float  sdot_naive   (const float  *a, const float  *b, int n);
-extern double ddot_naive   (const double *a, const double *b, int n);
-extern double sddot_naive  (const float  *a, const float  *b, int n);
+#ifndef DOT_NOFMA
+extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
+extern double ddot_avxfma  (const double *a, const double *b, int n);
+extern double sddot_avxfma (const float  *a, const float  *b, int n);
+#endif
+#endif
 
 /*----------------------------------------------------------------------------
   Inline Functions

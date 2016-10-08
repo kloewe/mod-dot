@@ -3,8 +3,10 @@
   Contents: dot product (cpu dispatcher)
   Author  : Kristian Loewe
 ----------------------------------------------------------------------------*/
-#include "cpuinfo.h"
 #include "dot.h"
+#ifdef ARCH_IS_X86_64
+#include "cpuinfo.h"
+#endif
 
 /*----------------------------------------------------------------------------
   Function Prototypes
@@ -40,6 +42,7 @@ double sddot_select (const float *a, const float *b, int n) {
 }
 
 int    dot_set_impl (int impl) {
+  #ifdef ARCH_IS_X86_64
   #ifndef DOT_NOFMA
   // the AVX-FMA implementations are currently slower than the AVX
   // implementations and are thus only used if explicitly requested
@@ -67,4 +70,10 @@ int    dot_set_impl (int impl) {
     sddot_ptr = &sddot_naive;
     return DOT_NAIVE;
   }
+  #else
+  sdot_ptr  = &sdot_naive;
+  ddot_ptr  = &ddot_naive;
+  sddot_ptr = &sddot_naive;
+  return DOT_NAIVE;
+  #endif
 }
