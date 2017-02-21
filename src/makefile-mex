@@ -1,0 +1,58 @@
+#-----------------------------------------------------------------------------
+# File    : makefile-mex
+# Contents: build objects for use with matlab/mex
+# Author  : Kristian Loewe
+#-----------------------------------------------------------------------------
+.SUFFIXES:                                   # remove built-in rules
+MAKEFLAGS    += -r
+
+CPUINFODIR  = ../../cpuinfo
+
+CFLAGS      = -std=c99 \
+              -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
+              -pedantic -fPIC
+COPTIMFLAGS = -O2
+
+MATLABROOT  = $(dir $(realpath $(shell which matlab)))
+MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
+
+OBJDIR      = ../obj/$(shell uname -m)/matlab
+_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
+
+#-----------------------------------------------------------------------------
+# Build Objects
+#-----------------------------------------------------------------------------
+all: dot_naive.o dot_sse2.o dot_avx.o dot_avxfma.o dot.o
+
+dot_naive.o:             $(OBJDIR)/dot_naive.o
+$(OBJDIR)/dot_naive.o:   dot_naive.h
+$(OBJDIR)/dot_naive.o:   dot_naive.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -c dot_naive.c -outdir $(OBJDIR)
+
+dot_sse2.o:              $(OBJDIR)/dot_sse2.o
+$(OBJDIR)/dot_sse2.o:    dot_sse2.h
+$(OBJDIR)/dot_sse2.o:    dot_sse2.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
+    -msse2' \
+    -DNDEBUG -c dot_sse2.c -outdir $(OBJDIR)
+
+dot_avx.o:               $(OBJDIR)/dot_avx.o
+$(OBJDIR)/dot_avx.o:     dot_avx.h
+$(OBJDIR)/dot_avx.o:     dot_avx.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
+    -mavx -funroll-loops' \
+    -DNDEBUG -c dot_avx.c -outdir $(OBJDIR)
+
+dot_avxfma.o:            $(OBJDIR)/dot_avxfma.o
+$(OBJDIR)/dot_avxfma.o:  dot_avx.h
+$(OBJDIR)/dot_avxfma.o:  dot_avxfma.c dot_avx.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
+    -mfma -mavx -funroll-loops' \
+    -DNDEBUG -c dot_avxfma.c -outdir $(OBJDIR)
+
+dot.o:                   $(OBJDIR)/dot.o
+$(OBJDIR)/dot.o:         dot.h $(CPUINFODIR)/src/cpuinfo.h
+$(OBJDIR)/dot.o:         dot.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -I$(CPUINFODIR)/src -c dot.c -outdir $(OBJDIR)
