@@ -27,32 +27,34 @@ all: dot_naive.o dot_sse2.o dot_avx.o dot_avxfma.o dot.o
 dot_naive.o:             $(OBJDIR)/dot_naive.o
 $(OBJDIR)/dot_naive.o:   dot_naive.h
 $(OBJDIR)/dot_naive.o:   dot_naive.c makefile-mex
-	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS)' \
     -DNDEBUG -c dot_naive.c -outdir $(OBJDIR)
 
 dot_sse2.o:              $(OBJDIR)/dot_sse2.o
 $(OBJDIR)/dot_sse2.o:    dot_sse2.h
 $(OBJDIR)/dot_sse2.o:    dot_sse2.c makefile-mex
-	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
-    -msse2' \
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS) -msse2' \
     -DNDEBUG -c dot_sse2.c -outdir $(OBJDIR)
 
 dot_avx.o:               $(OBJDIR)/dot_avx.o
 $(OBJDIR)/dot_avx.o:     dot_avx.h
 $(OBJDIR)/dot_avx.o:     dot_avx.c makefile-mex
-	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
-    -mavx -funroll-loops' \
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS) -mavx -funroll-loops' \
     -DNDEBUG -c dot_avx.c -outdir $(OBJDIR)
 
 dot_avxfma.o:            $(OBJDIR)/dot_avxfma.o
 $(OBJDIR)/dot_avxfma.o:  dot_avx.h
 $(OBJDIR)/dot_avxfma.o:  dot_avxfma.c dot_avx.c makefile-mex
-	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS) \
-    -mfma -mavx -funroll-loops' \
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS) -mfma -mavx -funroll-loops' \
     -DNDEBUG -c dot_avxfma.c -outdir $(OBJDIR)
 
 dot.o:                   $(OBJDIR)/dot.o
 $(OBJDIR)/dot.o:         dot.h $(CPUINFODIR)/src/cpuinfo.h
 $(OBJDIR)/dot.o:         dot.c makefile-mex
-	$(MEXCC) CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS)' \
     -DNDEBUG -I$(CPUINFODIR)/src -c dot.c -outdir $(OBJDIR)
