@@ -41,20 +41,32 @@ double sddot_select (const float *a, const float *b, int n) {
   return (*sddot_ptr)(a,b,n);
 }
 
+
+// Note: The AVX-FMA implementations seem to be slower than the AVX
+// implementations and are thus only used if explicitly requested.
+
 dot_flags dot_set_impl (dot_flags impl) {
   #ifdef ARCH_IS_X86_64
-  #ifndef DOT_NOFMA
-  // the AVX-FMA implementations are currently slower than the AVX
-  // implementations and are thus only used if explicitly requested
-  if      (hasFMA3() && hasAVX() && (impl == DOT_AVXFMA)) { // AVX-FMA
+  # ifndef DOT_NOFMA
+  #  ifndef DOT_NOAVX512
+  if (hasAVX512f() && (impl >= DOT_AVX512)) {               // AVX512
+    sdot_ptr  = &sdot_avx512;
+    ddot_ptr  = &ddot_avx512;
+    sddot_ptr = &sddot_avx512;
+    return DOT_AVX512; }
+
+  else if (hasFMA3() && hasAVX() && (impl == DOT_AVXFMA)) { // AVX-FMA
+  #  else
+  if      (hasFMA3() && hasAVX() && (impl == DOT_AVXFMA)) {
+  #  endif
     sdot_ptr  = &sdot_avxfma;
     ddot_ptr  = &ddot_avxfma;
     sddot_ptr = &sddot_avxfma;
     return DOT_AVXFMA; }
   else if (hasAVX()              && (impl >= DOT_AVX)) {    // AVX
-  #else
-  if      (hasAVX()              && (impl >= DOT_AVX)) {    // AVX
-  #endif
+  # else
+  if      (hasAVX()              && (impl >= DOT_AVX)) {
+  # endif
     sdot_ptr  = &sdot_avx;
     ddot_ptr  = &ddot_avx;
     sddot_ptr = &sddot_avx;

@@ -27,6 +27,7 @@ typedef enum {
     DOT_SSE2   = 2,   // SSE2
     DOT_AVX    = 3,   // AVX
     DOT_AVXFMA = 4,   // AVX+FMA3
+    DOT_AVX512 = 5,   // AVX-512
     DOT_AUTO   = 100  // automatic choice
 } dot_flags;
 // Using dot_set_impl(), these values are used to specify the set of
@@ -69,6 +70,7 @@ inline double sddot        (const float  *a, const float  *b, int n);
  *       DOT_SSE2   -> SSE2 implementations
  *       DOT_AVX    -> AVX implementations
  *       DOT_AVXFMA -> AVX+FMA3 implementations
+ *       DOT_AVX512 -> AVX-512 implementations
  *       DOT_AUTO   -> automatically choose the best available set
  *       (see also the above enum)
  *
@@ -95,11 +97,16 @@ extern float  sdot_avx     (const float  *a, const float  *b, int n);
 extern double ddot_avx     (const double *a, const double *b, int n);
 extern double sddot_avx    (const float  *a, const float  *b, int n);
 
-#ifndef DOT_NOFMA
+# ifndef DOT_NOFMA
 extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
 extern double ddot_avxfma  (const double *a, const double *b, int n);
 extern double sddot_avxfma (const float  *a, const float  *b, int n);
-#endif
+#  ifndef DOT_NOAVX512
+extern float  sdot_avx512  (const float  *a, const float  *b, int n);
+extern double ddot_avx512  (const double *a, const double *b, int n);
+extern double sddot_avx512 (const float  *a, const float  *b, int n);
+#  endif
+# endif
 #endif
 
 /*----------------------------------------------------------------------------
