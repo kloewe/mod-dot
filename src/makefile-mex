@@ -15,6 +15,8 @@ COPTIMFLAGS = -O2
 
 MATLABROOT  = $(dir $(realpath $(shell which matlab)))
 MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
+#MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims \
+#              GCC='/usr/bin/gcc-7'
 
 OBJDIR      = ../obj/$(shell uname -m)/matlab
 _DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
@@ -22,7 +24,7 @@ _DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
 #-----------------------------------------------------------------------------
 # Build Objects
 #-----------------------------------------------------------------------------
-all: dot_naive.o dot_sse2.o dot_avx.o dot_avxfma.o dot.o
+all: dot_naive.o dot_sse2.o dot_avx.o dot_avxfma.o dot_avx512.o dot.o
 
 dot_naive.o:             $(OBJDIR)/dot_naive.o
 $(OBJDIR)/dot_naive.o:   dot_naive.h
@@ -51,6 +53,13 @@ $(OBJDIR)/dot_avxfma.o:  dot_avxfma.c dot_avx.c makefile-mex
 	$(MEXCC) CFLAGS='$(CFLAGS)' \
     COPTIMFLAGS='$(COPTIMFLAGS) -mfma -mavx -funroll-loops' \
     -DNDEBUG -c dot_avxfma.c -outdir $(OBJDIR)
+
+dot_avx512.o:            $(OBJDIR)/dot_avx512.o
+$(OBJDIR)/dot_avx512.o:  dot_avx512.h
+$(OBJDIR)/dot_avx512.o:  dot_avx512.c makefile-mex
+	$(MEXCC) CFLAGS='$(CFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS) -mavx512f -mfma -funroll-loops' \
+    -DNDEBUG -c dot_avx512.c -outdir $(OBJDIR)
 
 dot.o:                   $(OBJDIR)/dot.o
 $(OBJDIR)/dot.o:         dot.h $(CPUINFODIR)/src/cpuinfo.h
