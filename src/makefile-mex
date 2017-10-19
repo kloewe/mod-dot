@@ -12,11 +12,40 @@ CFLAGS      = -std=c99 \
               -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
               -pedantic -fPIC
 COPTIMFLAGS = -O2
+DEFS        =
+
+GCC_VERSION := $(shell expr `gcc -dumpversion | \
+               sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' \
+               -e 's/^[0-9]\{3,4\}$$/&00/'`)
+GCC_GTEQ_47 := $(shell echo $(GCC_VERSION)\>=40700 | bc)
+GCC_GTEQ_71 := $(shell echo $(GCC_VERSION)\>=70100 | bc)
+
+ifeq ($(GCC_GTEQ_47),1)
+  DOT_USEFMA ?= 1
+endif
+
+ifeq ($(GCC_GTEQ_71),1)
+  DOT_USEAVX512 ?= 1
+endif
+
+OBJS = dot.o dot_naive.o dot_sse2.o dot_avx.o
+
+ifeq ($(DOT_USEFMA),1)
+  OBJS += dot_avxfma.o
+else
+  DEFS += -DDOT_NOFMA
+endif
+
+ifeq ($(DOT_USEAVX512),1)
+  OBJS += dot_avx512.o
+else
+  DEFS += -DDOT_NOAVX512
+endif
 
 MATLABROOT  = $(dir $(realpath $(shell which matlab)))
-MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
-#MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims \
-#              GCC='/usr/bin/gcc-7'
+MEX_FLAGS   = -largeArrayDims
+MEXCC       = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS)
+#MEXCC       = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS) GCC='/usr/bin/gcc-7'
 
 OBJDIR      = ../obj/$(shell uname -m)/matlab
 _DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
@@ -24,7 +53,7 @@ _DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
 #-----------------------------------------------------------------------------
 # Build Objects
 #-----------------------------------------------------------------------------
-all: dot_naive.o dot_sse2.o dot_avx.o dot_avxfma.o dot_avx512.o dot.o
+all: $(OBJS) dot_all.o
 
 dot_naive.o:             $(OBJDIR)/dot_naive.o
 $(OBJDIR)/dot_naive.o:   dot_naive.h
@@ -65,5 +94,9 @@ dot.o:                   $(OBJDIR)/dot.o
 $(OBJDIR)/dot.o:         dot.h $(CPUINFODIR)/src/cpuinfo.h
 $(OBJDIR)/dot.o:         dot.c makefile-mex
 	$(MEXCC) CFLAGS='$(CFLAGS)' \
-    COPTIMFLAGS='$(COPTIMFLAGS)' \
+    COPTIMFLAGS='$(COPTIMFLAGS)' $(DEFS) \
     -DNDEBUG -I$(CPUINFODIR)/src -c dot.c -outdir $(OBJDIR)
+
+dot_all.o:               $(OBJDIR)/dot_all.o
+$(OBJDIR)/dot_all.o:     $(OBJS)
+	$(LD) -r -o $(OBJDIR)/dot_all.o $(addprefix $(OBJDIR)/, $(OBJS))
