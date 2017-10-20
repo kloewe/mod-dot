@@ -90,5 +90,5 @@ $(OBJDIR)/dot.o:         dot.c makefile-oct
     $(MEXCC) -DNDEBUG -I$(CPUINFODIR)/src -c $< -o $@
 
 dot_all.o:               $(OBJDIR)/dot_all.o
-$(OBJDIR)/dot_all.o:     $(OBJS)
+$(OBJDIR)/dot_all.o:     $(addprefix $(OBJDIR)/, $(OBJS))
 	$(LD) -r -o $(OBJDIR)/dot_all.o $(addprefix $(OBJDIR)/, $(OBJS))
