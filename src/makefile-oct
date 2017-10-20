@@ -15,9 +15,14 @@ CFLAGS      = -std=c99 \
 COPTIMFLAGS = -O2
 DEFS        =
 
-GCC_VERSION := $(shell expr `gcc -dumpversion | \
+GCC_VERSION := $(shell expr `gcc -dumpversion`)
+ifeq (,$(findstring .,$(GCC_VERSION)))
+  GCC_VERSION := $(shell expr `gcc -dumpfullversion`)
+endif
+GCC_VERSION := $(shell expr `echo $(GCC_VERSION) | \
                sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' \
                -e 's/^[0-9]\{3,4\}$$/&00/'`)
+
 GCC_GTEQ_47 := $(shell echo $(GCC_VERSION)\>=40700 | bc)
 GCC_GTEQ_71 := $(shell echo $(GCC_VERSION)\>=70100 | bc)
 
