@@ -5,7 +5,7 @@
 #           (with modifications for octave by Christina Rossmanith)
 #-----------------------------------------------------------------------------
 .SUFFIXES:                                   # remove built-in rules
-MAKEFLAGS    += -r
+MAKEFLAGS   += -r
 
 CPUINFODIR  = ../../cpuinfo
 
@@ -48,10 +48,10 @@ else
   DEFS += -DDOT_NOAVX512
 endif
 
-MEXCC       = mkoctfile --mex
+MEXCC  = mkoctfile --mex
 
-OBJDIR      = ../obj/$(shell uname -m)/octave
-_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
+OBJDIR = ../obj/$(shell uname -m)/octave
+_DUMMY := $(shell mkdir -p $(OBJDIR))
 
 #-----------------------------------------------------------------------------
 # Build Objects

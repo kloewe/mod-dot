@@ -4,7 +4,7 @@
 # Author  : Kristian Loewe
 #-----------------------------------------------------------------------------
 .SUFFIXES:                                   # remove built-in rules
-MAKEFLAGS    += -r
+MAKEFLAGS   += -r
 
 CPUINFODIR  = ../../cpuinfo
 
@@ -47,13 +47,13 @@ else
   DEFS += -DDOT_NOAVX512
 endif
 
-MATLABROOT  = $(dir $(realpath $(shell which matlab)))
-MEX_FLAGS   = -largeArrayDims
-MEXCC       = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS)
-#MEXCC       = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS) GCC='/usr/bin/gcc-7'
+MATLABROOT = $(dir $(realpath $(shell which matlab)))
+MEX_FLAGS  = -largeArrayDims
+MEXCC      = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS)
+#MEXCC      = $(realpath $(MATLABROOT))/mex $(MEX_FLAGS) GCC='/usr/bin/gcc-7'
 
-OBJDIR      = ../obj/$(shell uname -m)/matlab
-_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
+OBJDIR     = ../obj/$(shell uname -m)/matlab
+_DUMMY     := $(shell mkdir -p $(OBJDIR))
 
 #-----------------------------------------------------------------------------
 # Build Objects
