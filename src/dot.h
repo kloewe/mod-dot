@@ -23,12 +23,13 @@ extern "C"
   Enum to encode the sets of dot implementations
 ----------------------------------------------------------------------------*/
 typedef enum {
-    DOT_NAIVE  = 1,   // plain C
-    DOT_SSE2   = 2,   // SSE2
-    DOT_AVX    = 3,   // AVX
-    DOT_AVXFMA = 4,   // AVX+FMA3
-    DOT_AVX512 = 5,   // AVX-512
-    DOT_AUTO   = 100  // automatic choice
+    DOT_NAIVE     = 1,   // plain C
+    DOT_SSE2      = 2,   // SSE2
+    DOT_AVX       = 3,   // AVX
+    DOT_AVXFMA    = 4,   // AVX+FMA3
+    DOT_AVX512    = 5,   // AVX512
+    DOT_AVX512FMA = 6,   // AVX512+FMA3
+    DOT_AUTO      = 100  // automatic choice
 } dot_flags;
 // Using dot_set_impl(), these values are used to specify the set of
 // implementations to be used. The values/sets are ordered chronologically wrt
@@ -66,12 +67,13 @@ inline double sddot        (const float  *a, const float  *b, int n);
  *
  * parameters
  * impl  indicates which set of implementations should be used
- *       DOT_NAIVE  -> plain C implementations
- *       DOT_SSE2   -> SSE2 implementations
- *       DOT_AVX    -> AVX implementations
- *       DOT_AVXFMA -> AVX+FMA3 implementations
- *       DOT_AVX512 -> AVX-512 implementations
- *       DOT_AUTO   -> automatically choose the best available set
+ *       DOT_NAIVE     -> plain C implementations
+ *       DOT_SSE2      -> SSE2 implementations
+ *       DOT_AVX       -> AVX implementations
+ *       DOT_AVXFMA    -> AVX+FMA3 implementations
+ *       DOT_AVX512    -> AVX512 implementations
+ *       DOT_AVX512FMA -> AVX512+FMA3 implementations
+ *       DOT_AUTO      -> automatically choose the best available set
  *       (see also the above enum)
  *
  * returns
@@ -80,31 +82,36 @@ inline double sddot        (const float  *a, const float  *b, int n);
 extern dot_flags dot_set_impl (dot_flags impl);
 
 
-extern float  sdot_select  (const float  *a, const float  *b, int n);
-extern double ddot_select  (const double *a, const double *b, int n);
-extern double sddot_select (const float  *a, const float  *b, int n);
+extern float  sdot_select     (const float  *a, const float  *b, int n);
+extern double ddot_select     (const double *a, const double *b, int n);
+extern double sddot_select    (const float  *a, const float  *b, int n);
 
-extern float  sdot_naive   (const float  *a, const float  *b, int n);
-extern double ddot_naive   (const double *a, const double *b, int n);
-extern double sddot_naive  (const float  *a, const float  *b, int n);
+extern float  sdot_naive      (const float  *a, const float  *b, int n);
+extern double ddot_naive      (const double *a, const double *b, int n);
+extern double sddot_naive     (const float  *a, const float  *b, int n);
 
 #ifdef ARCH_IS_X86_64
-extern float  sdot_sse2    (const float  *a, const float  *b, int n);
-extern double ddot_sse2    (const double *a, const double *b, int n);
-extern double sddot_sse2   (const float  *a, const float  *b, int n);
+extern float  sdot_sse2       (const float  *a, const float  *b, int n);
+extern double ddot_sse2       (const double *a, const double *b, int n);
+extern double sddot_sse2      (const float  *a, const float  *b, int n);
 
-extern float  sdot_avx     (const float  *a, const float  *b, int n);
-extern double ddot_avx     (const double *a, const double *b, int n);
-extern double sddot_avx    (const float  *a, const float  *b, int n);
+extern float  sdot_avx        (const float  *a, const float  *b, int n);
+extern double ddot_avx        (const double *a, const double *b, int n);
+extern double sddot_avx       (const float  *a, const float  *b, int n);
 
 # ifndef DOT_NOFMA
-extern float  sdot_avxfma  (const float  *a, const float  *b, int n);
-extern double ddot_avxfma  (const double *a, const double *b, int n);
-extern double sddot_avxfma (const float  *a, const float  *b, int n);
-#  ifndef DOT_NOAVX512
-extern float  sdot_avx512  (const float  *a, const float  *b, int n);
-extern double ddot_avx512  (const double *a, const double *b, int n);
-extern double sddot_avx512 (const float  *a, const float  *b, int n);
+extern float  sdot_avxfma     (const float  *a, const float  *b, int n);
+extern double ddot_avxfma     (const double *a, const double *b, int n);
+extern double sddot_avxfma    (const float  *a, const float  *b, int n);
+# endif
+# ifndef DOT_NOAVX512
+extern float  sdot_avx512     (const float  *a, const float  *b, int n);
+extern double ddot_avx512     (const double *a, const double *b, int n);
+extern double sddot_avx512    (const float  *a, const float  *b, int n);
+#  ifndef DOT_NOFMA
+extern float  sdot_avx512fma  (const float  *a, const float  *b, int n);
+extern double ddot_avx512fma  (const double *a, const double *b, int n);
+extern double sddot_avx512fma (const float  *a, const float  *b, int n);
 #  endif
 # endif
 #endif

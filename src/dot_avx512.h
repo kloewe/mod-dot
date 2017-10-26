@@ -12,32 +12,40 @@
 
 #include <immintrin.h>
 
-// #define DOT_AVX512_USE_FMA
-
 /*----------------------------------------------------------------------------
   Function Prototypes
 ----------------------------------------------------------------------------*/
-inline float  sdot_avx512  (const float  *a, const float  *b, int n);
-inline double ddot_avx512  (const double *a, const double *b, int n);
-inline double sddot_avx512 (const float  *a, const float  *b, int n);
+#ifdef __FMA__
+inline float  sdot_avx512fma  (const float  *a, const float  *b, int n);
+inline double ddot_avx512fma  (const double *a, const double *b, int n);
+inline double sddot_avx512fma (const float  *a, const float  *b, int n);
+#else
+inline float  sdot_avx512     (const float  *a, const float  *b, int n);
+inline double ddot_avx512     (const double *a, const double *b, int n);
+inline double sddot_avx512    (const float  *a, const float  *b, int n);
+#endif
 
 /*----------------------------------------------------------------------------
   Inline Functions
 ----------------------------------------------------------------------------*/
 
 // --- dot product (single precision)
-inline float sdot_avx512 (const float *a, const float *b, int n)
+#ifdef __FMA__
+inline float sdot_avx512fma (const float *a, const float *b, int n)
+#else
+inline float sdot_avx512    (const float *a, const float *b, int n)
+#endif
 {
   // initialize 16 sums
   __m512 s16 = _mm512_setzero_ps();
 
   // in each iteration, add 1 product to each of the 16 sums in parallel
   for (int k = 0, nq = 16*(n/16); k < nq; k += 16)
-    #ifndef DOT_AVX512_USE_FMA
-    s16 = _mm512_add_ps(
-           _mm512_mul_ps(_mm512_loadu_ps(a+k), _mm512_loadu_ps(b+k)), s16);
-    #else
+    #ifdef __FMA__
     s16 = _mm512_fmadd_ps(_mm512_loadu_ps(a+k), _mm512_loadu_ps(b+k), s16);
+    #else
+    s16 = _mm512_add_ps(
+            _mm512_mul_ps(_mm512_loadu_ps(a+k), _mm512_loadu_ps(b+k)), s16);
     #endif
 
   // compute horizontal sum
@@ -53,18 +61,22 @@ inline float sdot_avx512 (const float *a, const float *b, int n)
 /*--------------------------------------------------------------------------*/
 
 // --- dot product (double precision)
-inline double ddot_avx512 (const double *a, const double *b, int n)
+#ifdef __FMA__
+inline double ddot_avx512fma (const double *a, const double *b, int n)
+#else
+inline double ddot_avx512    (const double *a, const double *b, int n)
+#endif
 {
   // initialize 8 sums
   __m512d s8 = _mm512_setzero_pd();
 
   // in each iteration, add 1 product to each of the 8 sums in parallel
   for (int k = 0, nq = 8*(n/8); k < nq; k += 8)
-    #ifndef DOT_AVX512_USE_FMA
+    #ifdef __FMA__
+    s8 = _mm512_fmadd_pd(_mm512_loadu_pd(a+k), _mm512_loadu_pd(b+k), s8);
+    #else
     s8 = _mm512_add_pd(
            _mm512_mul_pd(_mm512_loadu_pd(a+k), _mm512_loadu_pd(b+k)), s8);
-    #else
-    s8 = _mm512_fmadd_pd(_mm512_loadu_pd(a+k), _mm512_loadu_pd(b+k), s8);
     #endif
 
   // compute horizontal sum
@@ -80,19 +92,23 @@ inline double ddot_avx512 (const double *a, const double *b, int n)
 /*--------------------------------------------------------------------------*/
 
 // --- dot product (input: single; intermediate and output: double)
-inline double sddot_avx512 (const float *a, const float *b, int n)
+#ifdef __FMA__
+inline double sddot_avx512fma (const float *a, const float *b, int n)
+#else
+inline double sddot_avx512    (const float *a, const float *b, int n)
+#endif
 {
   // initialize 8 sums
   __m512d s8 = _mm512_setzero_pd();
 
   // in each iteration, add 1 product to each of the 4 sums in parallel
   for (int k = 0, nq = 8*(n/8); k < nq; k += 8)
-    #ifndef DOT_AVX512_USE_FMA
-    s8 = _mm512_add_pd(_mm512_cvtps_pd(
-            _mm256_mul_ps(_mm256_loadu_ps(a+k), _mm256_loadu_ps(b+k))), s8);
-    #else
+    #ifdef __FMA__
     s8 = _mm512_fmadd_pd(_mm512_cvtps_pd(_mm256_loadu_ps(a+k)),
                          _mm512_cvtps_pd(_mm256_loadu_ps(b+k)), s8);
+    #else
+    s8 = _mm512_add_pd(_mm512_cvtps_pd(
+           _mm256_mul_ps(_mm256_loadu_ps(a+k), _mm256_loadu_ps(b+k))), s8);
     #endif
 
   // compute horizontal sum

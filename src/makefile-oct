@@ -13,7 +13,6 @@ CFLAGS      = -std=c99 \
               -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
               -pedantic -fPIC
 COPTIMFLAGS = -O2
-DEFS        =
 
 GCC_VERSION := $(shell expr `gcc -dumpversion`)
 ifeq (,$(findstring .,$(GCC_VERSION)))
@@ -26,11 +25,14 @@ GCC_VERSION := $(shell expr `echo $(GCC_VERSION) | \
 GCC_GTEQ_47 := $(shell echo $(GCC_VERSION)\>=40700 | bc)
 GCC_GTEQ_71 := $(shell echo $(GCC_VERSION)\>=70100 | bc)
 
+DOT_DEFS =
+
 ifeq ($(GCC_GTEQ_47),1)
   DOT_USEFMA ?= 1
 endif
 
 ifeq ($(GCC_GTEQ_71),1)
+  CFLAGS += -Wimplicit-fallthrough=0
   DOT_USEAVX512 ?= 1
 endif
 
@@ -39,13 +41,16 @@ OBJS = dot.o dot_naive.o dot_sse2.o dot_avx.o
 ifeq ($(DOT_USEFMA),1)
   OBJS += dot_avxfma.o
 else
-  DEFS += -DDOT_NOFMA
+  DOT_DEFS += -DDOT_NOFMA
 endif
 
 ifeq ($(DOT_USEAVX512),1)
   OBJS += dot_avx512.o
+  ifeq ($(DOT_USEFMA),1)
+    OBJS += dot_avx512fma.o
+  endif
 else
-  DEFS += -DDOT_NOAVX512
+  DOT_DEFS += -DDOT_NOAVX512
 endif
 
 MEXCC  = mkoctfile --mex
@@ -58,42 +63,48 @@ _DUMMY := $(shell mkdir -p $(OBJDIR))
 #-----------------------------------------------------------------------------
 all: $(OBJS) dot_all.o
 
-dot_naive.o:             $(OBJDIR)/dot_naive.o
-$(OBJDIR)/dot_naive.o:   dot_naive.h
-$(OBJDIR)/dot_naive.o:   dot_naive.c makefile-oct
+dot_naive.o:                $(OBJDIR)/dot_naive.o
+$(OBJDIR)/dot_naive.o:      dot_naive.h
+$(OBJDIR)/dot_naive.o:      dot_naive.c makefile-oct
 	CFLAGS='$(CFLAGS) $(COPTIMFLAGS)' \
     $(MEXCC) -DNDEBUG -c $< -o $@
 
-dot_sse2.o:              $(OBJDIR)/dot_sse2.o
-$(OBJDIR)/dot_sse2.o:    dot_sse2.h
-$(OBJDIR)/dot_sse2.o:    dot_sse2.c makefile-oct
+dot_sse2.o:                 $(OBJDIR)/dot_sse2.o
+$(OBJDIR)/dot_sse2.o:       dot_sse2.h
+$(OBJDIR)/dot_sse2.o:       dot_sse2.c makefile-oct
 	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -msse2' \
     $(MEXCC) -DNDEBUG -c $< -o $@
 
-dot_avx.o:               $(OBJDIR)/dot_avx.o
-$(OBJDIR)/dot_avx.o:     dot_avx.h
-$(OBJDIR)/dot_avx.o:     dot_avx.c makefile-oct
+dot_avx.o:                  $(OBJDIR)/dot_avx.o
+$(OBJDIR)/dot_avx.o:        dot_avx.h
+$(OBJDIR)/dot_avx.o:        dot_avx.c makefile-oct
 	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -mavx -funroll-loops' \
     $(MEXCC) -DNDEBUG -c $< -o $@
 
-dot_avxfma.o:            $(OBJDIR)/dot_avxfma.o
-$(OBJDIR)/dot_avxfma.o:  dot_avx.h
-$(OBJDIR)/dot_avxfma.o:  dot_avxfma.c dot_avx.c makefile-oct
+dot_avxfma.o:               $(OBJDIR)/dot_avxfma.o
+$(OBJDIR)/dot_avxfma.o:     dot_avx.h
+$(OBJDIR)/dot_avxfma.o:     dot_avxfma.c dot_avx.c makefile-oct
 	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -mfma -mavx -funroll-loops' \
     $(MEXCC) -DNDEBUG -c $< -o $@
 
-dot_avx512.o:            $(OBJDIR)/dot_avx512.o
-$(OBJDIR)/dot_avx512.o:  dot_avx512.h
-$(OBJDIR)/dot_avx512.o:  dot_avx512.c makefile-oct
-	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -mavx512f -mfma -funroll-loops' \
+dot_avx512.o:               $(OBJDIR)/dot_avx512.o
+$(OBJDIR)/dot_avx512.o:     dot_avx512.h
+$(OBJDIR)/dot_avx512.o:     dot_avx512.c makefile-oct
+	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -mavx512f -funroll-loops' \
     $(MEXCC) -DNDEBUG -c $< -o $@
 
-dot.o:                   $(OBJDIR)/dot.o
-$(OBJDIR)/dot.o:         dot.h $(CPUINFODIR)/src/cpuinfo.h
-$(OBJDIR)/dot.o:         dot.c makefile-oct
-	CFLAGS='$(CFLAGS) $(COPTIMFLAGS)' \
-    $(MEXCC) -DNDEBUG -I$(CPUINFODIR)/src -c $< -o $@
+dot_avx512fma.o:            $(OBJDIR)/dot_avx512fma.o
+$(OBJDIR)/dot_avx512fma.o:  dot_avx512.h
+$(OBJDIR)/dot_avx512fma.o:  dot_avx512.c makefile-oct
+	CFLAGS='$(CFLAGS) $(COPTIMFLAGS) -mavx512f -mfma -funroll-loops' \
+    $(MEXCC) -DNDEBUG -c dot_avx512.c -o $@
 
-dot_all.o:               $(OBJDIR)/dot_all.o
-$(OBJDIR)/dot_all.o:     $(addprefix $(OBJDIR)/, $(OBJS))
+dot.o:                      $(OBJDIR)/dot.o
+$(OBJDIR)/dot.o:            dot.h $(CPUINFODIR)/src/cpuinfo.h
+$(OBJDIR)/dot.o:            dot.c makefile-oct
+	CFLAGS='$(CFLAGS) $(COPTIMFLAGS)' \
+    $(MEXCC) $(DOT_DEFS) -DNDEBUG -I$(CPUINFODIR)/src -c $< -o $@
+
+dot_all.o:                  $(OBJDIR)/dot_all.o
+$(OBJDIR)/dot_all.o:        $(addprefix $(OBJDIR)/, $(OBJS))
 	$(LD) -r -o $(OBJDIR)/dot_all.o $(addprefix $(OBJDIR)/, $(OBJS))
