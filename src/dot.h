@@ -40,23 +40,23 @@ typedef enum {
 /*----------------------------------------------------------------------------
   Type Definitions
 ----------------------------------------------------------------------------*/
-typedef float  (sdot_func)  (const float  *a, const float  *b, int n);
-typedef double (ddot_func)  (const double *a, const double *b, int n);
-typedef double (sddot_func) (const float  *a, const float  *b, int n);
+typedef float  (sdot_func)    (const float  *a, const float  *b, int n);
+typedef double (ddot_func)    (const double *a, const double *b, int n);
+typedef double (dsdot_func)   (const float  *a, const float  *b, int n);
 
 /*----------------------------------------------------------------------------
   Global Variables
 ----------------------------------------------------------------------------*/
 extern sdot_func  *sdot_ptr;
 extern ddot_func  *ddot_ptr;
-extern sddot_func *sddot_ptr;
+extern dsdot_func *dsdot_ptr;
 
 /*----------------------------------------------------------------------------
   Function Prototypes
 ----------------------------------------------------------------------------*/
-inline float  sdot         (const float  *a, const float  *b, int n);
-inline double ddot         (const double *a, const double *b, int n);
-inline double sddot        (const float  *a, const float  *b, int n);
+inline float  sdot            (const float  *a, const float  *b, int n);
+inline double ddot            (const double *a, const double *b, int n);
+inline double dsdot           (const float  *a, const float  *b, int n);
 
 /* dot_set_impl
  * ------------
@@ -84,34 +84,34 @@ extern dot_flags dot_set_impl (dot_flags impl);
 
 extern float  sdot_select     (const float  *a, const float  *b, int n);
 extern double ddot_select     (const double *a, const double *b, int n);
-extern double sddot_select    (const float  *a, const float  *b, int n);
+extern double dsdot_select    (const float  *a, const float  *b, int n);
 
 extern float  sdot_naive      (const float  *a, const float  *b, int n);
 extern double ddot_naive      (const double *a, const double *b, int n);
-extern double sddot_naive     (const float  *a, const float  *b, int n);
+extern double dsdot_naive     (const float  *a, const float  *b, int n);
 
 #ifdef ARCH_IS_X86_64
 extern float  sdot_sse2       (const float  *a, const float  *b, int n);
 extern double ddot_sse2       (const double *a, const double *b, int n);
-extern double sddot_sse2      (const float  *a, const float  *b, int n);
+extern double dsdot_sse2      (const float  *a, const float  *b, int n);
 
 extern float  sdot_avx        (const float  *a, const float  *b, int n);
 extern double ddot_avx        (const double *a, const double *b, int n);
-extern double sddot_avx       (const float  *a, const float  *b, int n);
+extern double dsdot_avx       (const float  *a, const float  *b, int n);
 
 # ifndef DOT_NOFMA
 extern float  sdot_avxfma     (const float  *a, const float  *b, int n);
 extern double ddot_avxfma     (const double *a, const double *b, int n);
-extern double sddot_avxfma    (const float  *a, const float  *b, int n);
+extern double dsdot_avxfma    (const float  *a, const float  *b, int n);
 # endif
 # ifndef DOT_NOAVX512
 extern float  sdot_avx512     (const float  *a, const float  *b, int n);
 extern double ddot_avx512     (const double *a, const double *b, int n);
-extern double sddot_avx512    (const float  *a, const float  *b, int n);
+extern double dsdot_avx512    (const float  *a, const float  *b, int n);
 #  ifndef DOT_NOFMA
 extern float  sdot_avx512fma  (const float  *a, const float  *b, int n);
 extern double ddot_avx512fma  (const double *a, const double *b, int n);
-extern double sddot_avx512fma (const float  *a, const float  *b, int n);
+extern double dsdot_avx512fma (const float  *a, const float  *b, int n);
 #  endif
 # endif
 #endif
@@ -128,8 +128,8 @@ inline double ddot (const double *a, const double *b, int n) {
   return (*ddot_ptr)(a,b,n);
 }
 
-inline double sddot (const float *a, const float *b, int n) {
-  return (*sddot_ptr)(a,b,n);
+inline double dsdot (const float *a, const float *b, int n) {
+  return (*dsdot_ptr)(a,b,n);
 }
 
 #ifdef __cplusplus

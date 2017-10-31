@@ -18,11 +18,11 @@
 #ifdef __FMA__
 inline float  sdot_avx512fma  (const float  *a, const float  *b, int n);
 inline double ddot_avx512fma  (const double *a, const double *b, int n);
-inline double sddot_avx512fma (const float  *a, const float  *b, int n);
+inline double dsdot_avx512fma (const float  *a, const float  *b, int n);
 #else
 inline float  sdot_avx512     (const float  *a, const float  *b, int n);
 inline double ddot_avx512     (const double *a, const double *b, int n);
-inline double sddot_avx512    (const float  *a, const float  *b, int n);
+inline double dsdot_avx512    (const float  *a, const float  *b, int n);
 #endif
 
 /*----------------------------------------------------------------------------
@@ -93,9 +93,9 @@ inline double ddot_avx512    (const double *a, const double *b, int n)
 
 // --- dot product (input: single; intermediate and output: double)
 #ifdef __FMA__
-inline double sddot_avx512fma (const float *a, const float *b, int n)
+inline double dsdot_avx512fma (const float *a, const float *b, int n)
 #else
-inline double sddot_avx512    (const float *a, const float *b, int n)
+inline double dsdot_avx512    (const float *a, const float *b, int n)
 #endif
 {
   // initialize 8 sums
@@ -119,6 +119,6 @@ inline double sddot_avx512    (const float *a, const float *b, int n)
     s += a[k] * b[k];
 
   return s;
-}  // sddot_avx512()
+}  // dsdot_avx512()
 
 #endif // DOT_AVX512_H

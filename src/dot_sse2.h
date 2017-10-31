@@ -38,7 +38,7 @@
 ----------------------------------------------------------------------------*/
 inline float  sdot_sse2  (const float  *a, const float  *b, int n);
 inline double ddot_sse2  (const double *a, const double *b, int n);
-inline double sddot_sse2 (const float  *a, const float  *b, int n);
+inline double dsdot_sse2 (const float  *a, const float  *b, int n);
 
 /*----------------------------------------------------------------------------
   Inline Functions
@@ -134,7 +134,7 @@ inline double ddot_sse2 (const double *a, const double *b, int n)
 /*--------------------------------------------------------------------------*/
 
 // --- dot product (input: single; intermediate and output: double)
-inline double sddot_sse2 (const float *a, const float *b, int n)
+inline double dsdot_sse2 (const float *a, const float *b, int n)
 {
   // initialize total sum
   double s = 0.0;
@@ -186,6 +186,6 @@ inline double sddot_sse2 (const float *a, const float *b, int n)
     s += a[k] * b[k];
 
   return s;
-}  // sddot_sse2()
+}  // dsdot_sse2()
 
 #endif // DOT_SSE2_H

@@ -18,11 +18,11 @@
 #ifdef __FMA__
 inline float  sdot_avxfma  (const float  *a, const float  *b, int n);
 inline double ddot_avxfma  (const double *a, const double *b, int n);
-inline double sddot_avxfma (const float  *a, const float  *b, int n);
+inline double dsdot_avxfma (const float  *a, const float  *b, int n);
 #else
 inline float  sdot_avx     (const float  *a, const float  *b, int n);
 inline double ddot_avx     (const double *a, const double *b, int n);
-inline double sddot_avx    (const float  *a, const float  *b, int n);
+inline double dsdot_avx    (const float  *a, const float  *b, int n);
 #endif
 
 /*----------------------------------------------------------------------------
@@ -89,6 +89,7 @@ inline double ddot_avx    (const double *a, const double *b, int n)
     s4 = _mm256_add_pd(
            _mm256_mul_pd(_mm256_loadu_pd(a+k), _mm256_loadu_pd(b+k)), s4);
     #endif
+
   // compute horizontal sum
   __m128d sh = _mm_add_pd(_mm256_extractf128_pd(s4, 0),
                           _mm256_extractf128_pd(s4, 1));
@@ -106,9 +107,9 @@ inline double ddot_avx    (const double *a, const double *b, int n)
 
 // --- dot product (input: single; intermediate and output: double)
 #ifdef __FMA__
-inline double sddot_avxfma (const float *a, const float *b, int n)
+inline double dsdot_avxfma (const float *a, const float *b, int n)
 #else
-inline double sddot_avx    (const float *a, const float *b, int n)
+inline double dsdot_avx    (const float *a, const float *b, int n)
 #endif
 {
   // initialize 4 sums
@@ -123,6 +124,7 @@ inline double sddot_avx    (const float *a, const float *b, int n)
     s4 = _mm256_add_pd(
       _mm256_cvtps_pd(_mm_mul_ps(_mm_loadu_ps(a+k), _mm_loadu_ps(b+k))), s4);
     #endif
+
   // compute horizontal sum
   __m128d sh = _mm_add_pd(_mm256_extractf128_pd(s4, 0),
                           _mm256_extractf128_pd(s4, 1));
@@ -134,6 +136,6 @@ inline double sddot_avx    (const float *a, const float *b, int n)
     s += a[k] * b[k];
 
   return s;
-}  // sddot_avx()
+}  // dsdot_avx()
 
 #endif // DOT_AVX_H

@@ -13,14 +13,14 @@
 ----------------------------------------------------------------------------*/
 extern float  sdot  (const float  *a, const float  *b, int n);
 extern double ddot  (const double *a, const double *b, int n);
-extern double sddot (const float  *a, const float  *b, int n);
+extern double dsdot (const float  *a, const float  *b, int n);
 
 /*----------------------------------------------------------------------------
   Global Variables
 ----------------------------------------------------------------------------*/
 sdot_func  *sdot_ptr  = &sdot_select;
 ddot_func  *ddot_ptr  = &ddot_select;
-sddot_func *sddot_ptr = &sddot_select;
+dsdot_func *dsdot_ptr = &dsdot_select;
 
 /*----------------------------------------------------------------------------
   Functions
@@ -36,9 +36,9 @@ double ddot_select (const double *a, const double *b, int n) {
   return (*ddot_ptr)(a,b,n);
 }
 
-double sddot_select (const float *a, const float *b, int n) {
+double dsdot_select (const float *a, const float *b, int n) {
   dot_set_impl(DOT_AUTO);
-  return (*sddot_ptr)(a,b,n);
+  return (*dsdot_ptr)(a,b,n);
 }
 
 dot_flags dot_set_impl (dot_flags impl) {
@@ -55,7 +55,7 @@ dot_flags dot_set_impl (dot_flags impl) {
       if (hasAVX512f() && hasFMA3()) {
         sdot_ptr  = &sdot_avx512fma;
         ddot_ptr  = &ddot_avx512fma;
-        sddot_ptr = &sddot_avx512fma;
+        dsdot_ptr = &dsdot_avx512fma;
         return DOT_AVX512FMA;
       }
      #endif
@@ -63,7 +63,7 @@ dot_flags dot_set_impl (dot_flags impl) {
       if (hasAVX512f()) {
         sdot_ptr  = &sdot_avx512;
         ddot_ptr  = &ddot_avx512;
-        sddot_ptr = &sddot_avx512;
+        dsdot_ptr = &dsdot_avx512;
         return DOT_AVX512;
       }
     #endif
@@ -74,7 +74,7 @@ dot_flags dot_set_impl (dot_flags impl) {
       if ((impl == DOT_AVXFMA) && hasAVX() && hasFMA3()) {
         sdot_ptr  = &sdot_avxfma;
         ddot_ptr  = &ddot_avxfma;
-        sddot_ptr = &sddot_avxfma;
+        dsdot_ptr = &dsdot_avxfma;
         return DOT_AVXFMA;
       }
     #endif
@@ -82,20 +82,20 @@ dot_flags dot_set_impl (dot_flags impl) {
       if (hasAVX()) {
         sdot_ptr  = &sdot_avx;
         ddot_ptr  = &ddot_avx;
-        sddot_ptr = &sddot_avx;
+        dsdot_ptr = &dsdot_avx;
         return DOT_AVX;
       }
     case DOT_SSE2 :
       if (hasSSE2()) {
         sdot_ptr  = &sdot_sse2;
         ddot_ptr  = &ddot_sse2;
-        sddot_ptr = &sddot_sse2;
+        dsdot_ptr = &dsdot_sse2;
         return DOT_SSE2;
       }
     case DOT_NAIVE :
       sdot_ptr  = &sdot_naive;
       ddot_ptr  = &ddot_naive;
-      sddot_ptr = &sddot_naive;
+      dsdot_ptr = &dsdot_naive;
       return DOT_NAIVE;
     default :
       return dot_set_impl(DOT_AUTO);
