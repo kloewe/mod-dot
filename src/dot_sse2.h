@@ -58,7 +58,7 @@ inline float sdot_sse2 (const float *a, const float *b, int n)
       s += (*a) * (*b);
       n--; a++; b++;
       aligned = is_aligned(a, 16) && is_aligned(b, 16);
-      if (aligned || (++k > 2) || (++k > n))
+      if (aligned || (++k > 2) || (k > n))
         break;
     }
   }
@@ -147,7 +147,7 @@ inline double dsdot_sse2 (const float *a, const float *b, int n)
       s += (*a) * (*b);
       n--; a++; b++;
       aligned = is_aligned(a, 16) && is_aligned(b, 16);
-      if (aligned || (++k > 2) || (++k > n))
+      if (aligned || (++k > 2) || (k > n))
         break;
     }
   }
