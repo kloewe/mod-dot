@@ -11,6 +11,12 @@
 #endif
 
 #include <immintrin.h>
+#include <assert.h>
+
+// alignment check
+#include <stdint.h>
+#define is_aligned(POINTER, BYTE_COUNT) \
+  (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
 
 /*----------------------------------------------------------------------------
   Function Prototypes
@@ -36,6 +42,23 @@ inline float sdot_avxfma (const float *a, const float *b, int n)
 inline float sdot_avx    (const float *a, const float *b, int n)
 #endif
 {
+  // initialize total sum
+  float s = 0.0f;
+
+  // compute and add up to 7 products without SIMD to achieve alignment
+  int aligned = is_aligned(a, 32) && is_aligned(b, 32);
+  if (!aligned) {
+    int k = 0;
+    while (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 32) && is_aligned(b, 32);
+      if (aligned || (++k > 6) || (k > n))
+        break;
+    }
+  }
+  assert(aligned || (n < 8));
+
   // initialize 8 sums
   __m256 s8 = _mm256_setzero_ps();
 
@@ -60,7 +83,7 @@ inline float sdot_avx    (const float *a, const float *b, int n)
   __m128 sh = _mm_add_ss(_mm256_castps256_ps128(s8),
                          _mm256_extractf128_ps(s8, 1));
   #endif
-  float s = _mm_cvtss_f32(sh);  // extract horizontal sum from 1st elem.
+  s += _mm_cvtss_f32(sh);  // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 8*(n/8); k < n; k++)
@@ -78,6 +101,23 @@ inline double ddot_avxfma (const double *a, const double *b, int n)
 inline double ddot_avx    (const double *a, const double *b, int n)
 #endif
 {
+  // initialize total sum
+  double s = 0.0;
+
+  // compute and add up to 3 products without SIMD to achieve alignment
+  int aligned = is_aligned(a, 32) && is_aligned(b, 32);
+  if (!aligned) {
+    int k = 0;
+    while (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 32) && is_aligned(b, 32);
+      if (aligned || (++k > 2) || (k > n))
+        break;
+    }
+  }
+  assert(aligned || (n < 4));
+
   // initialize 4 sums
   __m256d s4 = _mm256_setzero_pd();
 
@@ -94,7 +134,7 @@ inline double ddot_avx    (const double *a, const double *b, int n)
   __m128d sh = _mm_add_pd(_mm256_extractf128_pd(s4, 0),
                           _mm256_extractf128_pd(s4, 1));
   sh = _mm_add_pd(sh, _mm_shuffle_pd(sh, sh, 1));
-  double s = _mm_cvtsd_f64(sh); // extract horizontal sum from 1st elem.
+  s += _mm_cvtsd_f64(sh);  // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 4*(n/4); k < n; k++)
@@ -112,6 +152,23 @@ inline double dsdot_avxfma (const float *a, const float *b, int n)
 inline double dsdot_avx    (const float *a, const float *b, int n)
 #endif
 {
+  // initialize total sum
+  double s = 0.0;
+
+  // compute and add up to 7 products without SIMD to achieve alignment
+  int aligned = is_aligned(a, 32) && is_aligned(b, 32);
+  if (!aligned) {
+    int k = 0;
+    while (!aligned) {
+      s += (*a) * (*b);
+      n--; a++; b++;
+      aligned = is_aligned(a, 32) && is_aligned(b, 32);
+      if (aligned || (++k > 6) || (k > n))
+        break;
+    }
+  }
+  assert(aligned || (n < 8));
+
   // initialize 4 sums
   __m256d s4 = _mm256_setzero_pd();
 
@@ -129,7 +186,7 @@ inline double dsdot_avx    (const float *a, const float *b, int n)
   __m128d sh = _mm_add_pd(_mm256_extractf128_pd(s4, 0),
                           _mm256_extractf128_pd(s4, 1));
   sh = _mm_add_pd(sh, _mm_shuffle_pd(sh, sh, 1));
-  double s = _mm_cvtsd_f64(sh); // extract horizontal sum from 1st elem.
+  s += _mm_cvtsd_f64(sh); // extract horizontal sum from 1st elem.
 
   // add the remaining products
   for (int k = 4*(n/4); k < n; k++)
