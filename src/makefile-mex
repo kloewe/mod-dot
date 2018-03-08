@@ -8,12 +8,12 @@
 #           make -f makefile-mex | grep -v 'Warning.*gcc version'
 #           make -B -f makefile-mex | grep -v 'Warning.*gcc version'
 #           DEBUG=1 make -B -f makefile-mex | grep -v 'Warning.*gcc version'
-#           MEX_FLAGS='GCC=/usr/bin/gcc-7' make -f makefile-mex
+#           GCC=/usr/bin/gcc-7 make -f makefile-mex
 #-----------------------------------------------------------------------------
 .SUFFIXES:
 MAKEFLAGS   += -r
 
-CC          ?= gcc
+GCC         ?= gcc
 CFBASE       = -std=c99 -Wall -Wextra -Wno-unused-parameter -Wconversion \
                -Wshadow -pedantic
 DEFS        ?=
@@ -31,7 +31,7 @@ CFLAGS       = $(CFBASE) -fPIC $(DEFS)
 
 MATLABROOT   = $(dir $(realpath $(shell which matlab)))
 MEXCC        = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEX_FLAGS) \
-               CFLAGS='$(CFLAGS)'
+               CFLAGS='$(CFLAGS)' GCC=$(GCC)
 
 OBJDIR       = ../obj/$(shell uname -m)/matlab
 _DUMMY      := $(shell mkdir -p $(OBJDIR))
@@ -42,9 +42,9 @@ CPUINFODIR   = ../../cpuinfo
 
 #-----------------------------------------------------------------------------
 
-GCC_VERSION := $(shell expr `gcc -dumpversion`)
+GCC_VERSION := $(shell expr `$(GCC) -dumpversion`)
 ifeq (,$(findstring .,$(GCC_VERSION)))
-  GCC_VERSION := $(shell expr `gcc -dumpfullversion`)
+  GCC_VERSION := $(shell expr `$(GCC) -dumpfullversion`)
 endif
 GCC_VERSION := $(shell expr `echo $(GCC_VERSION) | \
                sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' \
@@ -119,14 +119,17 @@ $(OBJDIR)/dot_avx512.o:     dot_avx512.c makefile-mex
 dot_avx512fma.o:            $(OBJDIR)/dot_avx512fma.o
 $(OBJDIR)/dot_avx512fma.o:  dot_avx512.h
 $(OBJDIR)/dot_avx512fma.o:  dot_avx512.c makefile
-	$(MEXCC) COPTIMFLAGS='$(CFOPT) -mavx512f -mfma -funroll-loops' \
-    -c dot_avx512.c -o $@
+	mv $(OBJDIR)/dot_avx512.o $(OBJDIR)/dot_avx512.o.tmp; \
+  $(MEXCC) COPTIMFLAGS='$(CFOPT) -mavx512f -mfma -funroll-loops' \
+    -c dot_avx512.c -outdir $(OBJDIR); \
+  mv $(OBJDIR)/dot_avx512.o $(OBJDIR)/dot_avx512fma.o; \
+  mv $(OBJDIR)/dot_avx512.o.tmp $(OBJDIR)/dot_avx512.o \
 
 dot.o:                      $(OBJDIR)/dot.o
 $(OBJDIR)/dot.o:            dot.h $(CPUINFODIR)/src/cpuinfo.h
 $(OBJDIR)/dot.o:            dot.c makefile-mex
 	$(MEXCC) COPTIMFLAGS='$(CFOPT)' $(DOT_DEFS) \
-    -DNDEBUG -I$(CPUINFODIR)/src -c dot.c -outdir $(OBJDIR)
+    -I$(CPUINFODIR)/src -c dot.c -outdir $(OBJDIR)
 
 dot_all.o:                  $(OBJDIR)/dot_all.o
 $(OBJDIR)/dot_all.o:        $(addprefix $(OBJDIR)/, $(OBJS))
